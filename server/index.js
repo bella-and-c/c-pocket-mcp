@@ -17,13 +17,13 @@ export async function createBridgeApp(config = {}) {
   const root = path.dirname(fileURLToPath(import.meta.url))
   const settings = {
     dataDir: config.dataDir ?? process.env.C_POCKET_DATA_DIR ?? path.join(root, '..', 'data'),
-    bridgeToken: config.bridgeToken ?? process.env.C_POCKET_BRIDGE_TOKEN ?? '',
+    bridgeToken: config.bridgeToken ?? cleanEnvironmentValue(process.env.C_POCKET_BRIDGE_TOKEN),
     allowedOrigins: config.allowedOrigins ?? splitOrigins(process.env.C_POCKET_ALLOWED_ORIGINS),
     cmemoryBaseUrl: config.cmemoryBaseUrl ?? process.env.CMEMORY_BASE_URL ?? 'http://127.0.0.1:4282',
     cmemoryToken: config.cmemoryToken ?? process.env.CMEMORY_TOKEN ?? '',
-    mcpPath: normalizeMcpPath(config.mcpPath ?? process.env.C_POCKET_MCP_PATH ?? '/mcp'),
+    mcpPath: normalizeMcpPath(config.mcpPath ?? (cleanEnvironmentValue(process.env.C_POCKET_MCP_PATH) || '/mcp')),
     temporaryPublicMcp: config.temporaryPublicMcp ?? process.argv.includes('--temporary-public-mcp'),
-    dropSecret: config.dropSecret ?? process.env.C_POCKET_DROP_SECRET ?? `${randomUUID().replaceAll('-', '')}${randomUUID().replaceAll('-', '')}`,
+    dropSecret: config.dropSecret ?? (cleanEnvironmentValue(process.env.C_POCKET_DROP_SECRET) || `${randomUUID().replaceAll('-', '')}${randomUUID().replaceAll('-', '')}`),
   }
   const store = new PocketStore(settings.dataDir)
   await store.init()
@@ -220,7 +220,7 @@ export async function startBridge(config = {}) {
     ...bridge,
     httpServer,
     address: httpServer.address(),
-    mcpPath: config.mcpPath ?? process.env.C_POCKET_MCP_PATH ?? '/mcp',
+    mcpPath: config.mcpPath ?? (cleanEnvironmentValue(process.env.C_POCKET_MCP_PATH) || '/mcp'),
     async stop() {
       await bridge.close()
       await new Promise((resolve, reject) => httpServer.close((error) => error ? reject(error) : resolve()))
@@ -241,6 +241,10 @@ function isLoopbackRequest(req) {
 
 function splitOrigins(value = '') {
   return value.split(',').map((entry) => entry.trim()).filter(Boolean)
+}
+
+function cleanEnvironmentValue(value) {
+  return String(value ?? '').replace(/^\uFEFF/, '').trim()
 }
 
 function normalizeMcpPath(value) {

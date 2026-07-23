@@ -3,7 +3,7 @@ const errors = []
 requireSecret('C_POCKET_BRIDGE_TOKEN', 32)
 requireSecret('C_POCKET_DROP_SECRET', 48)
 
-const mcpPath = String(process.env.C_POCKET_MCP_PATH || '')
+const mcpPath = cleanEnvironmentValue(process.env.C_POCKET_MCP_PATH)
 if (!/^\/mcp\/[A-Za-z0-9_-]{32,}$/.test(mcpPath)) {
   errors.push('C_POCKET_MCP_PATH must be /mcp/<32+ random characters>.')
 }
@@ -20,8 +20,12 @@ if (errors.length) {
 console.log('Production configuration passed the secret and network checks.')
 
 function requireSecret(name, minimumLength) {
-  const value = String(process.env[name] || '')
+  const value = cleanEnvironmentValue(process.env[name])
   if (value.length < minimumLength || /replace|example|password|secret/i.test(value)) {
     errors.push(`${name} must contain at least ${minimumLength} non-placeholder characters.`)
   }
+}
+
+function cleanEnvironmentValue(value) {
+  return String(value || '').replace(/^\uFEFF/, '').trim()
 }
