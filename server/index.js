@@ -21,6 +21,7 @@ export async function createBridgeApp(config = {}) {
     allowedOrigins: config.allowedOrigins ?? splitOrigins(process.env.C_POCKET_ALLOWED_ORIGINS),
     cmemoryBaseUrl: config.cmemoryBaseUrl ?? process.env.CMEMORY_BASE_URL ?? 'http://127.0.0.1:4282',
     cmemoryToken: config.cmemoryToken ?? process.env.CMEMORY_TOKEN ?? '',
+    serverHost: config.host ?? (cleanEnvironmentValue(process.env.HOST) || '127.0.0.1'),
     mcpPath: normalizeMcpPath(config.mcpPath ?? (cleanEnvironmentValue(process.env.C_POCKET_MCP_PATH) || '/mcp')),
     temporaryPublicMcp: config.temporaryPublicMcp ?? process.argv.includes('--temporary-public-mcp'),
     dropSecret: config.dropSecret ?? (cleanEnvironmentValue(process.env.C_POCKET_DROP_SECRET) || `${randomUUID().replaceAll('-', '')}${randomUUID().replaceAll('-', '')}`),
@@ -35,7 +36,7 @@ export async function createBridgeApp(config = {}) {
     }),
     limits: { files: 5, fileSize: 25 * 1024 * 1024 },
   })
-  const app = createMcpExpressApp({ host: settings.temporaryPublicMcp ? '0.0.0.0' : '127.0.0.1' })
+  const app = createMcpExpressApp({ host: settings.temporaryPublicMcp ? '0.0.0.0' : settings.serverHost })
   const transports = new Map()
 
   app.disable('x-powered-by')
