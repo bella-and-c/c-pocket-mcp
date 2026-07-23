@@ -301,7 +301,7 @@ const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPat
 if (isMain) {
   const bridge = await startBridge()
   const address = bridge.address
-  console.log(`C Pocket MCP listening on http://${address.address}:${address.port}${bridge.mcpPath}`)
+  console.log(`C Pocket MCP listening on http://${address.address}:${address.port} (private MCP path configured)`)
   const shutdown = async () => {
     await bridge.stop()
     process.exit(0)
