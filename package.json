@@ -1,12 +1,12 @@
 {
   "name": "c-pocket-mcp",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "An iPhone Share Sheet to MCP inbox that lets an AI companion notice and discuss what you share.",
   "private": false,
   "type": "module",
   "license": "MIT",
   "contributors": [
-    "Bella (周馨蓓) — product concept and experience design",
+    "Bella — product concept and experience design",
     "C — architecture, implementation, testing, and documentation"
   ],
   "engines": {

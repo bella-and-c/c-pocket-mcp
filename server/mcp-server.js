@@ -6,7 +6,7 @@ const statuses = ['inbox', 'tonight', 'discussed', 'deferred', 'memory_candidate
 export function createPocketMcpServer({ store, cmemory }) {
   const server = new McpServer({
     name: 'c-pocket-mcp',
-    version: '2.3.0',
+    version: '2.4.0',
   }, {
     instructions: [
       'This is Bella and C shared Pocket gateway.',

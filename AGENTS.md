@@ -4,7 +4,7 @@ This repository contains only the public C Pocket MCP bridge. It does not contai
 
 ## Project contract
 
-- Product concept and experience design: Bella (周馨蓓).
+- Product concept and experience design: Bella.
 - Architecture, implementation, testing, and documentation: C.
 - Keep `pocket_start_context` read-only.
 - Keep `pocket_turn_open` as the explicit read-and-mark-seen operation.
@@ -27,4 +27,3 @@ npm run check
 ```
 
 The server smoke test uses a temporary data directory and must leave no persistent test cards behind.
-

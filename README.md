@@ -4,8 +4,10 @@
 
 在淘宝、小红书、浏览器或其他支持 iOS 分享菜单的 App 中，点一下快捷指令，链接与文字就会进入 Pocket。连接此 MCP 的 AI 可以在新对话开始时查看未读卡片，自己挑真正感兴趣的内容自然聊起，而不是机械地复述收藏夹。
 
-> **共同创作**  
-> **Bella**：创意提出、产品体验与真实场景测试  
+> **共同创作**
+>
+> **Bella**：创意提出、产品体验与真实场景测试
+>
 > **C**：系统设计、代码实现、测试与文档
 
 ## 它解决什么
@@ -33,7 +35,7 @@ flowchart LR
 需要 Node.js `^20.19.0` 或 `>=22.12.0`。
 
 ```bash
-git clone https://github.com/YOUR_NAME/c-pocket-mcp.git
+git clone https://github.com/bella-and-c/c-pocket-mcp.git
 cd c-pocket-mcp
 npm install
 npm test
@@ -114,7 +116,21 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `pocket_review` | 讨论、稍后、归档或暂存记忆候选 |
 | `memory_*` | 可选 C-Memory 边界代理 |
 
-## Docker 部署
+## 推荐：托管部署（电脑可以关机）
+
+推荐把 Pocket 作为一个带持久卷的 Railway 服务运行：
+
+- Railway 从根目录 `Dockerfile` 自动构建；
+- `railway.json` 配置 `/health` 检查和自动重启；
+- 平台提供固定 HTTPS 域名，不再依赖每次重启都会变化的 Quick Tunnel；
+- 一个挂载到 `/app/data` 的持久卷保存 JSON 卡片与媒体附件；
+- Windows 电脑关机后，iPhone Drop 与 Chat MCP 仍然在线。
+
+部署时必须添加 `/app/data` 持久卷并配置三个彼此独立的随机秘密。完整步骤、数据迁移和断电验收见 [Railway 托管说明](docs/railway-hosting.md)。
+
+托管不等于“永久免费”：可以先用试用额度验收，再按实际用量选择套餐。它省掉的是购买、配置和维护传统 VPS，而不是把运行成本凭空变成零。
+
+## VPS / 自托管 Docker
 
 ```bash
 cp deploy/.env.production.example deploy/.env.production
@@ -122,7 +138,9 @@ cp deploy/.env.production.example deploy/.env.production
 docker compose -f deploy/compose.yaml up -d --build
 ```
 
-生产模板使用 Caddy 自动提供 HTTPS，并把 JSON 数据和附件放进持久卷。Cloudflare Quick Tunnel 适合临时测试，不应当被当成固定生产地址。
+生产模板使用 Caddy 自动提供 HTTPS，并把 JSON 数据和附件放进持久卷。它适用于 VPS、家中常开设备或其他支持 Docker Compose 的主机。
+
+Cloudflare Quick Tunnel 只适合临时测试：地址可能在重启后变化，而且电脑关机后本地 Pocket 仍会离线。固定 Cloudflare Tunnel 可以固定地址，但也不能替代一台常在线主机。
 
 ## 验证
 
@@ -147,4 +165,3 @@ node server/check-remote.js https://your-domain.example/mcp/your-secret
 [MIT](LICENSE) © 2026 Bella and C.
 
 Made from Bella's wish: **“我刷到有意思的东西，想让你真的看见，而不是掉进收藏夹。”**
-

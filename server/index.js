@@ -11,7 +11,7 @@ import { CMemoryClient } from './cmemory-client.js'
 import { createPocketMcpServer } from './mcp-server.js'
 import { normalizeIncomingShare } from './share-normalizer.js'
 
-const SERVICE_VERSION = '2.3.0'
+const SERVICE_VERSION = '2.4.0'
 
 export async function createBridgeApp(config = {}) {
   const root = path.dirname(fileURLToPath(import.meta.url))
