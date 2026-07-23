@@ -4,6 +4,8 @@ Railway 运行仓库根目录的 `Dockerfile`，为服务提供固定 HTTPS 域�
 
 这套方案不需要购买或维护 VPS。Railway 仍然是付费或按量计费的云托管服务；可以先用试用额度完成验收，再根据实际用量决定是否保留。
 
+如果你已经有 VPS，并愿意自己负责系统更新、备份和网络安全，也可以选择 [Docker Compose 自托管方案](vps-hosting.md)。
+
 ## 一、从 GitHub 创建服务
 
 1. 登录 Railway，选择 **New Project → Deploy from GitHub repo**。

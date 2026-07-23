@@ -1,5 +1,8 @@
 # C Pocket MCP / C 的口袋
 
+[![GitHub Release](https://img.shields.io/github/v/release/bella-and-c/c-pocket-mcp?display_name=tag)](https://github.com/bella-and-c/c-pocket-mcp/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 把手机里“刚刷到、想分享给ta的东西”，变成一个不会丢、能被下一次对话主动读到的共享口袋。
 
 在淘宝、小红书、浏览器或其他支持 iOS 分享菜单的 App 中，点一下快捷指令，链接与文字就会进入 Pocket。连接此 MCP 的 AI 可以在新对话开始时查看未读卡片，自己挑真正感兴趣的内容自然聊起，而不是机械地复述收藏夹。
@@ -116,7 +119,17 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `pocket_review` | 讨论、稍后、归档或暂存记忆候选 |
 | `memory_*` | 可选 C-Memory 边界代理 |
 
-## 推荐：托管部署（电脑可以关机）
+## 选择部署方案
+
+| 你的情况 | 推荐方案 | 电脑能否关机 | 适合谁 |
+| --- | --- | --- | --- |
+| **没有 VPS，也不想维护服务器** | [方案 A：Railway 托管](docs/railway-hosting.md) | 可以 | 想最快获得固定 HTTPS 地址的个人用户 |
+| **已经有 VPS 或常开 Docker 主机** | [方案 B：Docker Compose 自托管](docs/vps-hosting.md) | 家用电脑可以关机，但 VPS / 主机必须在线 | 更在意控制权、已有服务器经验的用户 |
+| **只想在本机临时试用** | `npm start`，需要时配合 Quick Tunnel | 不可以 | 开发、演示和短时测试 |
+
+不确定就选 **方案 A**。两种长期方案运行的是同一个 Pocket 核心，iPhone 快捷指令和 Chat MCP 的使用方式没有区别；差别只在于服务由托管平台还是由你自己的主机保持在线。
+
+## 方案 A：没有 VPS — Railway 托管（推荐）
 
 推荐把 Pocket 作为一个带持久卷的 Railway 服务运行：
 
@@ -130,7 +143,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 托管不等于“永久免费”：可以先用试用额度验收，再按实际用量选择套餐。它省掉的是购买、配置和维护传统 VPS，而不是把运行成本凭空变成零。
 
-## VPS / 自托管 Docker
+## 方案 B：已有 VPS — Docker Compose 自托管
+
+如果你已经拥有带公网域名的 VPS，或者有一台 24 小时在线的 Docker 主机，可以自己托管 Pocket。仓库提供了 Pocket + Caddy 的 Compose 模板：Caddy 自动申请 HTTPS 证书，Pocket 数据写入 Docker Volume。
 
 ```bash
 cp deploy/.env.production.example deploy/.env.production
@@ -138,7 +153,7 @@ cp deploy/.env.production.example deploy/.env.production
 docker compose -f deploy/compose.yaml up -d --build
 ```
 
-生产模板使用 Caddy 自动提供 HTTPS，并把 JSON 数据和附件放进持久卷。它适用于 VPS、家中常开设备或其他支持 Docker Compose 的主机。
+部署前需要把域名 DNS 指向 VPS，并开放 `80`、`443` 端口。完整的安装、更新、备份、恢复与安全检查见 [VPS 自托管说明](docs/vps-hosting.md)。
 
 Cloudflare Quick Tunnel 只适合临时测试：地址可能在重启后变化，而且电脑关机后本地 Pocket 仍会离线。固定 Cloudflare Tunnel 可以固定地址，但也不能替代一台常在线主机。
 
