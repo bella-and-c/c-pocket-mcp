@@ -1,6 +1,6 @@
 {
   "name": "c-pocket-mcp",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "An iPhone Share Sheet to MCP inbox that lets an AI companion notice and discuss what you share.",
   "private": false,
   "type": "module",
