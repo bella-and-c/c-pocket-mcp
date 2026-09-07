@@ -259,7 +259,7 @@ function buildHeaders(extraHeaders) {
     'accept-encoding': 'gzip, deflate, br',
     'accept-language': 'zh-CN,zh;q=0.9,en;q=0.6',
     connection: 'close',
-    'user-agent': 'C-Pocket-Content-Reader/2.5 (+https://github.com/bella-and-c/c-pocket-mcp)',
+    'user-agent': 'C-Pocket-Content-Reader/2.6 (+https://github.com/bella-and-c/c-pocket-mcp)',
     ...(extraHeaders || {}),
   }
   for (const key of Object.keys(headers)) {

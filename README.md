@@ -36,6 +36,7 @@ flowchart LR
 - MCP 提供只读开场检查与“读取并标记已看”两种语义；
 - 可以按需打开卡片里的公开链接，提取清洗后的图文、代表图片与视频元信息；
 - 视频只在需要时抽取最多 3 张关键帧，不会把整段视频送进模型上下文；
+- 可订阅中英混合的科学、AI 与动漫 RSS，自动抓取、去重并生成晚间简报；
 - 可选连接记忆库，但不会自动把原始收藏晋升为长期记忆。
 
 ## 快速开始
@@ -73,6 +74,8 @@ npm start
 | `C_POCKET_READER_CACHE_TTL_MS` | 链接内容缓存时间；默认 24 小时 |
 | `C_POCKET_READER_MAX_HTML_BYTES` | 单页 HTML 上限；默认 2 MiB |
 | `C_POCKET_READER_MAX_MEDIA_BYTES` | 视频抽帧时允许下载的媒体上限；默认 80 MiB |
+| `C_POCKET_RSS_TIMEOUT_MS` | 单个 RSS 源刷新超时；默认 12000 ms |
+| `C_POCKET_RSS_MAX_FEED_BYTES` | 单个 RSS 文档上限；默认 1.5 MiB |
 | `C_POCKET_FFMPEG_PATH` / `C_POCKET_FFPROBE_PATH` | 可选 ffmpeg / ffprobe 路径 |
 | `CMEMORY_BASE_URL` / `CMEMORY_TOKEN` | 可选的 reviewed-memory 服务 |
 
@@ -130,7 +133,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `pocket_read_content` | 按需读取链接图文；可返回代表图与最多 3 张视频关键帧 |
 | `pocket_reply` | 对卡片追加幂等回复 |
 | `pocket_review` | 讨论、稍后、归档或暂存记忆候选 |
+| `rss_install_starter_pack` | 安装科学、AI、动漫的中英混合起始订阅包 |
+| `rss_list_feeds` / `rss_add_feed` / `rss_set_feed_enabled` | 管理 RSS / Atom 订阅 |
+| `rss_refresh` | 抓取已启用订阅并在本地去重 |
+| `rss_digest` / `rss_mark_delivered` | 读取未推送条目，并在简报成功后标记已送达 |
+| `search` / `fetch` | 用标准只读接口检索缓存的 RSS 条目 |
 | `memory_*` | 可选 C-Memory 边界代理 |
+
+### 每晚 RSS 简报
+
+首次使用先调用 `rss_install_starter_pack`，再调用 `rss_refresh` 和 `rss_digest`。起始包覆盖科学、AI 与动漫，并混合中文聚合源和英文原始源。服务只负责订阅、抓取、去重和保存原文；外文标题与摘要由连接它的模型在生成简报时翻译成自然中文，因此不需要额外的翻译 API Key。
+
+推荐定时流程：刷新订阅 → 选出 6–9 条未送达内容 → 保留原始标题、来源和链接并附中文翻译/摘要 → 回复成功后只对实际采用的条目调用 `rss_mark_delivered`。喜欢的内容再由用户明确选择是否存入其他收藏空间，不会自动批量外发。
 
 ## 选择部署方案
 
@@ -177,7 +191,7 @@ npm run check
 node server/check-remote.js https://your-domain.example/mcp/your-secret
 ```
 
-烟雾测试覆盖来源识别、重复合并、短回执、开场读取、已看状态、附件、链接正文与图片读取、缓存、幂等回复与 MCP 工具注册。
+烟雾测试覆盖来源识别、重复合并、短回执、开场读取、已看状态、附件、链接正文与图片读取、缓存、RSS / Atom 解析与去重、标准 search/fetch、送达状态、幂等回复与 MCP 工具注册。
 
 ### 链接读取的低 Token 设计
 

@@ -11,8 +11,10 @@ import { CMemoryClient } from './cmemory-client.js'
 import { PocketContentReader } from './content-reader.js'
 import { createPocketMcpServer } from './mcp-server.js'
 import { normalizeIncomingShare } from './share-normalizer.js'
+import { PocketRssReader } from './rss-reader.js'
+import { RssStore } from './rss-store.js'
 
-const SERVICE_VERSION = '2.5.0'
+const SERVICE_VERSION = '2.6.0'
 
 export async function createBridgeApp(config = {}) {
   const root = path.dirname(fileURLToPath(import.meta.url))
@@ -29,6 +31,8 @@ export async function createBridgeApp(config = {}) {
   }
   const store = new PocketStore(settings.dataDir)
   await store.init()
+  const rssStore = new RssStore(settings.dataDir)
+  await rssStore.init()
   const cmemory = new CMemoryClient({ baseUrl: settings.cmemoryBaseUrl, token: settings.cmemoryToken })
   const contentReader = new PocketContentReader({
     store,
@@ -39,6 +43,12 @@ export async function createBridgeApp(config = {}) {
     allowPrivateHosts: config.contentReaderOptions?.allowPrivateHosts === true,
     ffmpegPath: config.contentReaderOptions?.ffmpegPath ?? (cleanEnvironmentValue(process.env.C_POCKET_FFMPEG_PATH) || 'ffmpeg'),
     ffprobePath: config.contentReaderOptions?.ffprobePath ?? (cleanEnvironmentValue(process.env.C_POCKET_FFPROBE_PATH) || 'ffprobe'),
+  })
+  const rssReader = new PocketRssReader({
+    store: rssStore,
+    timeoutMs: numberSetting(config.rssReaderOptions?.timeoutMs, process.env.C_POCKET_RSS_TIMEOUT_MS, 12_000),
+    maxFeedBytes: numberSetting(config.rssReaderOptions?.maxFeedBytes, process.env.C_POCKET_RSS_MAX_FEED_BYTES, 1536 * 1024),
+    allowPrivateHosts: config.rssReaderOptions?.allowPrivateHosts === true,
   })
   const upload = multer({
     storage: multer.diskStorage({
@@ -73,7 +83,7 @@ export async function createBridgeApp(config = {}) {
       service: 'c-pocket-mcp',
       version: SERVICE_VERSION,
       storeReady: Array.isArray(items),
-      capabilities: { linkContent: true, images: true, videoKeyframes: true },
+      capabilities: { linkContent: true, images: true, videoKeyframes: true, rss: true },
     })
   })
 
@@ -209,7 +219,7 @@ export async function createBridgeApp(config = {}) {
         transport.onclose = () => {
           if (transport.sessionId) transports.delete(transport.sessionId)
         }
-        const server = createPocketMcpServer({ store, cmemory, contentReader })
+        const server = createPocketMcpServer({ store, cmemory, contentReader, rssStore, rssReader })
         await server.connect(transport)
       }
       await transport.handleRequest(req, res, req.body)
@@ -240,6 +250,8 @@ export async function createBridgeApp(config = {}) {
     store,
     cmemory,
     contentReader,
+    rssStore,
+    rssReader,
     async close() {
       await Promise.allSettled([...transports.values()].map((transport) => transport.close()))
       transports.clear()

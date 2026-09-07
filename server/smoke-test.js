@@ -41,6 +41,7 @@ try {
       ffmpegPath: 'missing-smoke-ffmpeg',
       ffprobePath: 'missing-smoke-ffprobe',
     },
+    rssReaderOptions: { allowPrivateHosts: true },
   })
   const baseUrl = `http://127.0.0.1:${bridge.address.port}`
   const source = {
@@ -76,8 +77,69 @@ try {
     'pocket_review',
     'pocket_start_context',
     'pocket_turn_open',
+    'rss_add_feed',
+    'rss_digest',
+    'rss_install_starter_pack',
+    'rss_list_feeds',
+    'rss_mark_delivered',
+    'rss_refresh',
+    'rss_set_feed_enabled',
+    'search',
+    'fetch',
   ].sort())
   assert.equal(names.some((name) => /ledger|training|health_room/.test(name)), false)
+
+  const rssFeed = await client.callTool({
+    name: 'rss_add_feed',
+    arguments: { name: 'Fixture Science', url: `${fixture.baseUrl}/rss`, category: 'science', language: 'en' },
+  })
+  const atomFeed = await client.callTool({
+    name: 'rss_add_feed',
+    arguments: { name: 'Fixture Anime', url: `${fixture.baseUrl}/atom`, category: 'anime', language: 'ja' },
+  })
+  assert.equal(rssFeed.structuredContent.created, true)
+  assert.equal(atomFeed.structuredContent.created, true)
+  const refreshedRss = await client.callTool({
+    name: 'rss_refresh',
+    arguments: { feed_ids: [], max_entries_per_feed: 10 },
+  })
+  assert.equal(refreshedRss.structuredContent.succeeded, 2)
+  assert.equal(refreshedRss.structuredContent.failed, 0)
+  assert.equal(refreshedRss.structuredContent.added, 3)
+  const digest = await client.callTool({
+    name: 'rss_digest',
+    arguments: { limit: 10, categories: ['science', 'anime'], languages: ['en', 'ja'], max_age_hours: 1 },
+  })
+  assert.equal(digest.structuredContent.items.length, 3)
+  assert.equal(digest.structuredContent.items.some((item) => item.title === '量子猫的新发现'), true)
+  assert.equal(digest.structuredContent.items.some((item) => /CDATA 与 HTML/.test(item.summary)), true)
+
+  const searched = await client.callTool({ name: 'search', arguments: { query: '量子' } })
+  assert.equal(searched.content.length, 1)
+  const searchPayload = JSON.parse(searched.content[0].text)
+  assert.equal(searchPayload.results.length, 1)
+  assert.deepEqual(Object.keys(searchPayload.results[0]).sort(), ['id', 'title', 'url'])
+  const fetched = await client.callTool({ name: 'fetch', arguments: { id: searchPayload.results[0].id } })
+  assert.equal(fetched.content.length, 1)
+  const fetchPayload = JSON.parse(fetched.content[0].text)
+  assert.equal(fetchPayload.title, '量子猫的新发现')
+  assert.match(fetchPayload.text, /实验摘要/)
+
+  const marked = await client.callTool({
+    name: 'rss_mark_delivered',
+    arguments: { ids: digest.structuredContent.items.map((item) => item.id) },
+  })
+  assert.equal(marked.structuredContent.items.length, 3)
+  const emptyDigest = await client.callTool({
+    name: 'rss_digest',
+    arguments: { limit: 10, categories: [], languages: [], max_age_hours: 1 },
+  })
+  assert.equal(emptyDigest.structuredContent.items.length, 0)
+  const starter = await client.callTool({ name: 'rss_install_starter_pack', arguments: {} })
+  const starterAgain = await client.callTool({ name: 'rss_install_starter_pack', arguments: {} })
+  assert.equal(starter.structuredContent.installed.length, 7)
+  assert.equal(starterAgain.structuredContent.installed.length, 0)
+  assert.equal(starterAgain.structuredContent.existing.length, 7)
 
   const listed = await client.callTool({ name: 'pocket_list', arguments: { limit: 10 } })
   assert.equal(listed.isError, undefined)
@@ -327,6 +389,26 @@ async function startContentFixture() {
       res.end(html)
       return
     }
+    if (req.url === '/rss') {
+      const now = new Date().toUTCString()
+      res.writeHead(200, { 'content-type': 'application/rss+xml; charset=utf-8' })
+      res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel><title>Fixture Science News</title>
+<item><title>量子猫的新发现</title><link>${originFor(req)}/science/cat</link><pubDate>${now}</pubDate><description><![CDATA[<p>实验摘要 &amp; 新结果。</p>]]></description></item>
+<item><title>Second &amp; Useful Result</title><guid>${originFor(req)}/science/second#fragment</guid><pubDate>${now}</pubDate><content:encoded><![CDATA[<div>CDATA 与 HTML 都要清理。</div>]]></content:encoded></item>
+</channel></rss>`)
+      return
+    }
+    if (req.url === '/atom') {
+      const now = new Date().toISOString()
+      res.writeHead(200, { 'content-type': 'application/atom+xml; charset=utf-8' })
+      res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Fixture Anime</title>
+<entry><title>新番のニュース</title><link rel="alternate" href="${originFor(req)}/anime/news"/><updated>${now}</updated><author><name>ANN Fixture</name></author><summary>新しいアニメ情報です。</summary></entry>
+</feed>`)
+      return
+    }
     res.writeHead(404).end('not found')
   })
   await new Promise((resolve, reject) => {
@@ -339,4 +421,8 @@ async function startContentFixture() {
     baseUrl: `http://127.0.0.1:${address.port}`,
     stop: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())),
   }
+}
+
+function originFor(req) {
+  return `http://${req.headers.host}`
 }
